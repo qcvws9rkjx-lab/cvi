@@ -2165,14 +2165,18 @@ function copiarScriptSimulacao(){
 }
 
 
-// ── GOOGLE SHEETS INTEGRATION ──
-const GS_URL     = '/api/sheets';
-const GS_HEADERS = {
-  leads:   ['id','nome','tel','email','origem','tipo','interesse','status','prioridade','stage','valor','renda','entrada','bairro','urgencia','pagamento','permuta','como','obs','tags','ultimo','descartado','descarte_motivo','descarte_recontato','descarte_obs','excluido_em','criado_em'],
-  imoveis: ['id','cat','nome','tipo','bairro','cidade','end','status','m2','qtos','suites','vagas','valor','construtora','fase','gerente','gertel','m2de','m2ate','valde','valate','unidades','entrega','obs'],
-  visitas: ['id','clienteId','imovelId','data','hora','tipo','finalidade','status','local','obs'],
-  tarefas: ['id','titulo','cat','prior','data','obs','status','criadoEm']
-};
+// ── SUPABASE INTEGRATION ──
+const SB_URL = 'https://yivnmgbcxkcfnhhqmzoy.supabase.co';
+const SB_KEY = 'sb_publishable_TxYdJgw9x7oia7xj6oeomA_-w1TSmHV';
+
+function sbHeaders() {
+  return {
+    'apikey': SB_KEY,
+    'Authorization': 'Bearer ' + SB_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  };
+}
 
 function showSyncIndicator(msg, ok) {
   let el = document.getElementById('sync-indicator');
@@ -2189,64 +2193,85 @@ function showSyncIndicator(msg, ok) {
   setTimeout(() => el.style.opacity = '0', 3000);
 }
 
-async function gsRead(sheet) {
+async function sbRead(table) {
   try {
-    const url = GS_URL + '?sheet=' + encodeURIComponent(sheet);
-    const res = await fetch(url);
-    const data = await res.json();
-    return data.ok ? data.rows : [];
-  } catch(e) { console.error('gsRead error:', e); return []; }
+    const res = await fetch(SB_URL + '/rest/v1/' + table + '?select=*', { headers: sbHeaders() });
+    return await res.json();
+  } catch(e) { console.error('sbRead error:', e); return []; }
 }
 
-async function gsWrite(sheet, rows) {
+async function sbWrite(table, rows) {
   try {
-    await fetch(GS_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({sheet, rows})
+    // Delete all and re-insert
+    await fetch(SB_URL + '/rest/v1/' + table + '?id=gte.0', {
+      method: 'DELETE', headers: sbHeaders()
     });
-  } catch(e) { console.error('gsWrite error:', e); }
+    if (rows.length === 0) return;
+    await fetch(SB_URL + '/rest/v1/' + table, {
+      method: 'POST',
+      headers: { ...sbHeaders(), 'Prefer': 'return=minimal' },
+      body: JSON.stringify(rows)
+    });
+  } catch(e) { console.error('sbWrite error:', e); }
 }
 
-async function gsSaveLeads() {
-  if (!leads.length) return;
-  const rows = [GS_HEADERS.leads, ...leads.map(l => GS_HEADERS.leads.map(h => l[h] !== undefined ? String(l[h]) : ''))];
-  await gsWrite('leads', rows);
+function leadToRow(l) {
+  return {
+    id: l.id, nome: l.nome||'', tel: l.tel||'', email: l.email||'',
+    origem: l.origem||'', tipo: l.tipo||'', interesse: l.interesse||'',
+    status: l.status||'Frio', prioridade: l.prioridade||'Média',
+    stage: l.stage||'novo', valor: l.valor||'', renda: l.renda||'',
+    entrada: l.entrada||'', bairro: l.bairro||'', urgencia: l.urgencia||'',
+    pagamento: l.pagamento||'', permuta: l.permuta||'', como: l.como||'',
+    obs: l.obs||'', tags: l.tags||'', ultimo: l.ultimo||'',
+    descartado: l.descartado||false, descarte_motivo: l.descarte_motivo||'',
+    descarte_recontato: l.descarte_recontato||'', descarte_obs: l.descarte_obs||'',
+    excluido_em: l.excluido_em||'', criado_em: l.criado_em||''
+  };
 }
-async function gsSaveImoveis() {
-  if (!imoveis.length) return;
-  const rows = [GS_HEADERS.imoveis, ...imoveis.map(i => GS_HEADERS.imoveis.map(h => i[h] !== undefined ? String(i[h]) : ''))];
-  await gsWrite('imoveis', rows);
+function imovelToRow(i) {
+  return {
+    id: i.id, cat: i.cat||'pronto', nome: i.nome||'', tipo: i.tipo||'',
+    bairro: i.bairro||'', cidade: i.cidade||'', endereco: i.end||'',
+    status: i.status||'Disponível', m2: i.m2||'', qtos: i.qtos||'',
+    suites: i.suites||'', vagas: i.vagas||'', valor: i.valor||'',
+    construtora: i.construtora||'', fase: i.fase||'', gerente: i.gerente||'',
+    gertel: i.gertel||'', m2de: i.m2de||'', m2ate: i.m2ate||'',
+    valde: i.valde||'', valate: i.valate||'', unidades: i.unidades||'',
+    entrega: i.entrega||'', obs: i.obs||''
+  };
 }
-async function gsSaveVisitas() {
-  if (!visitas.length) return;
-  const rows = [GS_HEADERS.visitas, ...visitas.map(v => GS_HEADERS.visitas.map(h => v[h] !== undefined ? String(v[h]) : ''))];
-  await gsWrite('visitas', rows);
+function visitaToRow(v) {
+  return {
+    id: v.id, cliente_id: v.clienteId||0, imovel_id: v.imovelId||0,
+    data: v.data||'', hora: v.hora||'09:00', tipo: v.tipo||'presencial',
+    finalidade: v.finalidade||'visita', status: v.status||'agendada',
+    local: v.local||'', obs: v.obs||''
+  };
 }
-async function gsSaveTarefas() {
-  if (!tarefas.length) return;
-  const rows = [GS_HEADERS.tarefas, ...tarefas.map(t => GS_HEADERS.tarefas.map(h => t[h] !== undefined ? String(t[h]) : ''))];
-  await gsWrite('tarefas', rows);
+function tarefaToRow(t) {
+  return {
+    id: t.id, titulo: t.titulo||'', cat: t.cat||'Pessoal',
+    prior: t.prior||'Média', data: t.data||'', obs: t.obs||'',
+    status: t.status||'pendente', criado_em: t.criadoEm||''
+  };
 }
 
 function rowToLead(r) {
-  return {
-    id:Number(r.id)||Date.now(), nome:r.nome||'', tel:r.tel||'', email:r.email||'',
+  return { id:Number(r.id), nome:r.nome||'', tel:r.tel||'', email:r.email||'',
     origem:r.origem||'', tipo:r.tipo||'', interesse:r.interesse||'',
     status:r.status||'Frio', prioridade:r.prioridade||'Média', stage:r.stage||'novo',
     valor:r.valor||'', renda:r.renda||'', entrada:r.entrada||'', bairro:r.bairro||'',
     urgencia:r.urgencia||'', pagamento:r.pagamento||'', permuta:r.permuta||'',
     como:r.como||'', obs:r.obs||'', tags:r.tags||'', ultimo:r.ultimo||'',
-    descartado:r.descartado==='true'||r.descartado===true,
+    descartado:r.descartado===true||r.descartado==='true',
     descarte_motivo:r.descarte_motivo||'', descarte_recontato:r.descarte_recontato||'',
-    descarte_obs:r.descarte_obs||'', excluido_em:r.excluido_em||'',
-    criado_em:r.criado_em||''
+    descarte_obs:r.descarte_obs||'', excluido_em:r.excluido_em||'', criado_em:r.criado_em||''
   };
 }
 function rowToImovel(r) {
-  return {
-    id:Number(r.id)||Date.now(), cat:r.cat||'pronto', nome:r.nome||'', tipo:r.tipo||'',
-    bairro:r.bairro||'', cidade:r.cidade||'', end:r.end||'',
+  return { id:Number(r.id), cat:r.cat||'pronto', nome:r.nome||'', tipo:r.tipo||'',
+    bairro:r.bairro||'', cidade:r.cidade||'', end:r.endereco||'',
     status:r.status||'Disponível', m2:r.m2||'', qtos:r.qtos||'',
     suites:r.suites||'', vagas:r.vagas||'', valor:r.valor||'',
     construtora:r.construtora||'', fase:r.fase||'', gerente:r.gerente||'',
@@ -2256,35 +2281,46 @@ function rowToImovel(r) {
   };
 }
 function rowToVisita(r) {
-  return {
-    id:Number(r.id)||Date.now(), clienteId:Number(r.clienteId)||0,
-    imovelId:Number(r.imovelId)||0, data:r.data||'', hora:r.hora||'09:00',
+  return { id:Number(r.id), clienteId:Number(r.cliente_id)||0,
+    imovelId:Number(r.imovel_id)||0, data:r.data||'', hora:r.hora||'09:00',
     tipo:r.tipo||'presencial', finalidade:r.finalidade||'visita',
     status:r.status||'agendada', local:r.local||'', obs:r.obs||''
   };
 }
 function rowToTarefa(r) {
-  return {
-    id:Number(r.id)||Date.now(), titulo:r.titulo||'', cat:r.cat||'Pessoal',
+  return { id:Number(r.id), titulo:r.titulo||'', cat:r.cat||'Pessoal',
     prior:r.prior||'Média', data:r.data||'', obs:r.obs||'',
-    status:r.status||'pendente', criadoEm:r.criadoEm||''
+    status:r.status||'pendente', criadoEm:r.criado_em||''
   };
+}
+
+async function gsSaveLeads() {
+  await sbWrite('leads', leads.map(leadToRow));
+}
+async function gsSaveImoveis() {
+  await sbWrite('imoveis', imoveis.map(imovelToRow));
+}
+async function gsSaveVisitas() {
+  await sbWrite('visitas', visitas.map(visitaToRow));
+}
+async function gsSaveTarefas() {
+  await sbWrite('tarefas', tarefas.map(tarefaToRow));
 }
 
 async function carregarDoSheets() {
   showSyncIndicator('⟳ Carregando dados...', true);
   try {
     const [leadsRows, imoveisRows, visitasRows, tarefasRows] = await Promise.all([
-      gsRead('leads'), gsRead('imoveis'), gsRead('visitas'), gsRead('tarefas')
+      sbRead('leads'), sbRead('imoveis'), sbRead('visitas'), sbRead('tarefas')
     ]);
-    if (leadsRows.length   > 0) leads   = leadsRows.map(rowToLead);
-    if (imoveisRows.length > 0) imoveis = imoveisRows.map(rowToImovel);
-    if (visitasRows.length > 0) visitas = visitasRows.map(rowToVisita);
-    if (tarefasRows.length > 0) tarefas = tarefasRows.map(rowToTarefa);
+    if (Array.isArray(leadsRows)   && leadsRows.length   > 0) leads   = leadsRows.map(rowToLead);
+    if (Array.isArray(imoveisRows) && imoveisRows.length > 0) imoveis = imoveisRows.map(rowToImovel);
+    if (Array.isArray(visitasRows) && visitasRows.length > 0) visitas = visitasRows.map(rowToVisita);
+    if (Array.isArray(tarefasRows) && tarefasRows.length > 0) tarefas = tarefasRows.map(rowToTarefa);
     updateDashboard();
-    showSyncIndicator('✓ Sincronizado com Sheets', true);
+    showSyncIndicator('✓ Sincronizado', true);
   } catch(e) {
-    console.error('Erro ao carregar do Sheets:', e);
+    console.error('Erro ao carregar:', e);
     updateDashboard();
     showSyncIndicator('⚠ Usando dados locais', false);
   }
