@@ -2166,8 +2166,8 @@ function copiarScriptSimulacao(){
 
 
 // ── SUPABASE INTEGRATION ──
-const SB_URL = 'https://yivnmgbcxkcfnhhqmzoy.supabase.co';
-const SB_KEY = 'sb_publishable_TxYdJgw9x7oia7xj6oeomA_-w1TSmHV';
+const SB_URL = 'https://kcgsxmhbvpklumdbwbd.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjZ3N4bWhidnBrbHVtZWRid2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NTUxMzgsImV4cCI6MjA5NDMzMTEzOH0.O2JrRGrXMoRCPBHkU33TnavBAYNCXVuQ_ga1ACd9_P0';
 
 function sbHeaders() {
   return {
@@ -2193,25 +2193,42 @@ function showSyncIndicator(msg, ok) {
   setTimeout(() => el.style.opacity = '0', 3000);
 }
 
+// Mapeamento: nome interno → nome real da tabela no Supabase
+const TABLE_MAP = {
+  'leads':   'Clientes',
+  'imoveis': 'imoveis',
+  'visitas': 'visitas',
+  'tarefas': 'tarefas'
+};
+function sbTable(t) { return TABLE_MAP[t] || t; }
+
 async function sbRead(table) {
   try {
-    const res = await fetch(SB_URL + '/rest/v1/' + table + '?select=*', { headers: sbHeaders() });
+    const t = sbTable(table);
+    const res = await fetch(SB_URL + '/rest/v1/' + t + '?select=*', { headers: sbHeaders() });
+    if (!res.ok) { console.warn('sbRead HTTP ' + res.status + ' na tabela ' + t); return []; }
     return await res.json();
   } catch(e) { console.error('sbRead error:', e); return []; }
 }
 
 async function sbWrite(table, rows) {
   try {
+    const t = sbTable(table);
     // Delete all and re-insert
-    await fetch(SB_URL + '/rest/v1/' + table + '?id=gte.0', {
+    const del = await fetch(SB_URL + '/rest/v1/' + t + '?id=gte.0', {
       method: 'DELETE', headers: sbHeaders()
     });
+    if (!del.ok) { console.warn('sbWrite DELETE HTTP ' + del.status + ' na tabela ' + t); }
     if (rows.length === 0) return;
-    await fetch(SB_URL + '/rest/v1/' + table, {
+    const ins = await fetch(SB_URL + '/rest/v1/' + t, {
       method: 'POST',
       headers: { ...sbHeaders(), 'Prefer': 'return=minimal' },
       body: JSON.stringify(rows)
     });
+    if (!ins.ok) {
+      const err = await ins.text();
+      console.error('sbWrite INSERT HTTP ' + ins.status + ' na tabela ' + t + ':', err);
+    }
   } catch(e) { console.error('sbWrite error:', e); }
 }
 
