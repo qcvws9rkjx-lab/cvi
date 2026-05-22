@@ -1125,18 +1125,9 @@ const BANCOS=[
 const MOTIVOS_DESCARTE=['Sem interesse','Sem capacidade financeira','Comprou com outro corretor','Não responde','Fora do perfil','Desistiu da compra','Número inválido','Duplicado'];
 const RECONTATOS=['Descartar permanentemente','Recontatar em 30 dias','Recontatar em 60 dias','Recontatar em 90 dias','Aguardando situação financeira'];
 
-let leads=[
-  {id:1,nome:'Marina Souza',tel:'(21) 98700-1234',email:'marina@email.com',origem:'Tráfego pago',tipo:'Moradia',interesse:'3 quartos',status:'Quente',prioridade:'Alta',stage:'visita',valor:'R$ 1.800.000',renda:'R$ 20.000 – R$ 50.000',entrada:'R$ 200.000',bairro:'Leblon',tags:['alto padrão','urgente'],obs:'Visita agendada.',ultimo:'2026-05-07',interacoes:[{tipo:'Ligação',dt:'2026-05-07 09:00',resultado:'Visita agendada',desc:'Confirmou visita ao Apto 3Q Leblon.'}],historico:[{d:'07/05/2026',t:'Visita agendada'}]},
-  {id:2,nome:'Carlos Menezes',tel:'(21) 97654-3210',email:'carlos@email.com',origem:'Indicação',tipo:'Investidor',interesse:'Luxo',status:'Morno',prioridade:'Média',stage:'proposta',valor:'R$ 2.400.000',renda:'Acima de R$ 50.000',entrada:'R$ 500.000',bairro:'Barra da Tijuca',tags:['investidor'],obs:'Proposta enviada.',ultimo:'2026-05-06',interacoes:[{tipo:'E-mail',dt:'2026-05-06 14:30',resultado:'Pediu retorno',desc:'Proposta enviada por e-mail.'}],historico:[{d:'06/05/2026',t:'Proposta enviada'}]},
-  {id:3,nome:'Ana Paula Lima',tel:'(21) 96543-2109',email:'ana@email.com',origem:'Orgânico',tipo:'Moradia',interesse:'2 quartos',status:'Frio',prioridade:'Baixa',stage:'novo',valor:'R$ 980.000',renda:'R$ 10.000 – R$ 20.000',entrada:'R$ 80.000',bairro:'Ipanema',tags:[],obs:'Em fase de pesquisa.',ultimo:'2026-04-28',interacoes:[{tipo:'WhatsApp',dt:'2026-04-28 10:00',resultado:'Sem resposta',desc:'Primeiro contato.'}],historico:[{d:'28/04/2026',t:'Contato inicial'}]},
-  {id:4,nome:'Roberto Andrade',tel:'(21) 95432-1098',email:'roberto@email.com',origem:'Plantão',tipo:'Moradia',interesse:'Cobertura',status:'Quente',prioridade:'Alta',stage:'fecha',valor:'R$ 3.100.000',renda:'Acima de R$ 50.000',entrada:'R$ 800.000',bairro:'Copacabana',tags:['alto padrão','urgente'],obs:'Fechar até fim do mês.',ultimo:'2026-05-07',interacoes:[{tipo:'Reunião',dt:'2026-05-07 08:15',resultado:'Em negociação',desc:'Reunião de fechamento.'}],historico:[{d:'07/05/2026',t:'Fechamento em andamento'}]},
-  {id:5,nome:'Fernanda Costa',tel:'(21) 94321-0987',email:'fernanda@email.com',origem:'Indicação',tipo:'Moradia',interesse:'Studio',status:'Quente',prioridade:'Baixa',stage:'posvenda',valor:'R$ 650.000',renda:'R$ 5.000 – R$ 10.000',entrada:'R$ 50.000',bairro:'Centro',tags:['indicação'],obs:'Contrato assinado.',ultimo:'2026-05-07',interacoes:[{tipo:'Reunião',dt:'2026-05-07 14:00',resultado:'Proposta aceita',desc:'Contrato assinado.'}],historico:[{d:'07/05/2026',t:'VENDA CONCLUÍDA'}]},
-  {id:6,nome:'Pedro Oliveira',tel:'(21) 93210-9876',email:'pedro@email.com',origem:'Tráfego pago',tipo:'Investidor',interesse:'2 quartos',status:'Morno',prioridade:'Média',stage:'apres',valor:'R$ 700.000',renda:'R$ 20.000 – R$ 50.000',entrada:'R$ 300.000',bairro:'Centro',tags:['investidor'],obs:'Busca renda de aluguel.',ultimo:'2026-04-30',interacoes:[{tipo:'WhatsApp',dt:'2026-04-30 10:00',resultado:'Pediu retorno',desc:'Apresentação por WhatsApp.'}],historico:[{d:'30/04/2026',t:'Apresentação por WhatsApp'}]},
-];
+let leads=[];
 
-let excluidos=[
-  {id:901,nome:'Juliana Ferreira',tel:'(21) 99123-4567',email:'juliana@email.com',origem:'Tráfego pago',tipo:'Moradia',interesse:'2 quartos',status:'Morno',prioridade:'Média',stage:'apres',valor:'R$ 850.000',renda:'R$ 10.000 – R$ 20.000',entrada:'R$ 100.000',bairro:'Tijuca',tags:[],obs:'Demonstrou interesse inicial mas sumiu.',ultimo:'2026-03-15',interacoes:[],historico:[],descarteMotivo:'Não responde',descarteRecontato:'Recontatar em 60 dias',descarteObs:'Tentei contato 3 vezes por WhatsApp e 1 ligação. Nenhum retorno.',excluidoEm:'07/05/2026'},
-];
+let excluidos=[];
 
 let imoveis=[
   {id:101,cat:'pronto',nome:'Cobertura Duplex Vista Mar',tipo:'Cobertura',bairro:'Copacabana',cidade:'Rio de Janeiro',end:'Av. Atlântica, 2800',status:'Disponível',m2:'220',qtos:'4',suites:'3',vagas:'3',valor:'3100000',obs:'Terraço com piscina privativa. Vista 180° para o mar.'},
@@ -1160,11 +1151,7 @@ let imoveis=[
   {id:119,cat:'lancamento',nome:'A Noite',tipo:'Apartamento',bairro:'Centro',cidade:'Rio de Janeiro',end:'Praça Mauá, 7',status:'Lançamento',construtora:'Azo',fase:'Lançamento',gerente:'Eduardo Davis',gertel:'(21) 98282-2600',m2de:'44',m2ate:'71',valde:'800000',valate:'1200000',unidades:'',entrega:'Sem confirmação oficial',obs:'R$ 14–18 mil/m².'},
 ];
 
-let visitas=[
-  {id:201,clienteId:1,imovelId:102,data:'2026-05-08',hora:'09:00',tipo:'presencial',finalidade:'visita',status:'agendada',local:'Rua Dias Ferreira, 500 — Leblon',obs:'Cliente quer ver o andar alto.'},
-  {id:202,clienteId:2,imovelId:103,data:'2026-05-08',hora:'11:30',tipo:'virtual',finalidade:'reuniao',status:'agendada',local:'Videoconferência',obs:'Apresentação do condomínio.'},
-  {id:203,clienteId:4,imovelId:101,data:'2026-05-05',hora:'14:00',tipo:'presencial',finalidade:'visita',status:'realizada',local:'Av. Atlântica, 2800',obs:'Cliente adorou a vista.'},
-];
+let visitas=[];
 
 let currentId=null,kCurrentId=null,currentImId=null,currentAgId=null,editingId=null,dragId=null,activeFilters={};
 let currentTags=[],selType_='Ligação';
